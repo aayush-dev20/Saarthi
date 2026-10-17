@@ -28,6 +28,19 @@ router.post('/users',validate(userSchema),asyncRoute(async(req,res)=>{
   res.status(201).json({data:{id:String(user._id),name:user.name,email:user.email,role:user.role,verified:Boolean(user.verifiedAt)}})
 }))
 
+router.get('/users/pending',asyncRoute(async(_req,res)=>{
+  const users=await User.find({role:'student',isActive:false,verifiedAt:null}).select('name email institutionId institutionalRecordRef department createdAt').sort({createdAt:1}).limit(200).lean()
+  res.json({data:users.map(user=>({id:String(user._id),name:user.name,email:user.email,institutionId:user.institutionId,institutionalRecordRef:user.institutionalRecordRef,department:user.department,createdAt:user.createdAt}))})
+}))
+
+router.post('/users/:id/approve',asyncRoute(async(req,res)=>{
+  if(!mongoose.isValidObjectId(req.params.id))throw notFound('Registration request not found')
+  const user=await User.findOneAndUpdate({_id:req.params.id,role:'student',isActive:false,verifiedAt:null},{$set:{isActive:true,verifiedAt:new Date()}},{new:true})
+  if(!user)throw notFound('Pending registration request not found')
+  await AuditLog.create({actorId:req.user._id,action:'user.registration.approved',entityType:'User',entityId:user._id,after:{email:user.email,role:user.role,institutionId:user.institutionId,institutionalRecordRef:user.institutionalRecordRef},requestId:req.id})
+  res.json({data:{id:String(user._id),name:user.name,email:user.email,role:user.role,verified:true}})
+}))
+
 router.patch('/users/:id/sections',asyncRoute(async(req,res)=>{
   if(!mongoose.isValidObjectId(req.params.id))throw notFound('User not found')
   const parsed=z.object({sectionIds:z.array(oid).max(100)}).strict().safeParse(req.body)

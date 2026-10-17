@@ -10,8 +10,18 @@ import {requireAuth} from '../middleware/auth.js'
 import {clearAuthCookies,issueTokenPair,setAuthCookies,tokenHash} from '../auth/tokens.js'
 
 const loginSchema=z.object({email:z.string().email().max(254).transform(v=>v.toLowerCase()),password:z.string().min(1).max(200)}).strict()
+const registrationSchema=z.object({name:z.string().trim().min(1).max(120),email:z.string().email().max(254).transform(v=>v.toLowerCase()),password:z.string().min(12).max(200),institutionId:z.string().trim().min(1).max(100),institutionalRecordRef:z.string().trim().min(1).max(200),department:z.string().trim().max(120).optional()}).strict()
 const router=Router()
 const loginLimiter=rateLimit({windowMs:15*60_000,limit:8,standardHeaders:'draft-7',legacyHeaders:false,message:{error:{code:'RATE_LIMITED',message:'Too many sign-in attempts. Try again later.'}}})
+const registrationLimiter=rateLimit({windowMs:60*60_000,limit:5,standardHeaders:'draft-7',legacyHeaders:false,message:{error:{code:'RATE_LIMITED',message:'Too many registration attempts. Try again later.'}}})
+
+router.post('/register',registrationLimiter,validate(registrationSchema),asyncRoute(async(req,res)=>{
+  const body=req.body
+  try{
+    await User.create({name:body.name,email:body.email,passwordHash:await bcrypt.hash(body.password,12),role:'student',institutionId:body.institutionId,institutionalRecordRef:body.institutionalRecordRef,department:body.department,isActive:false,verifiedAt:null})
+  }catch(error){if(error?.code!==11000)throw error}
+  res.status(202).json({message:'If the address is eligible, the registration request is pending institutional administrator review.'})
+}))
 
 router.post('/login',loginLimiter,validate(loginSchema),asyncRoute(async(req,res)=>{
   const user=await User.findOne({email:req.body.email}).select('+passwordHash')

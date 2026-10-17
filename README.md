@@ -1,6 +1,6 @@
 # Saarthi
 
-Saarthi is a React/Vite academic workspace with an Express, MongoDB, and Socket.IO API. Student, faculty, and administrator accounts are provisioned by an administrator; there is no public registration or demo role switcher.
+Saarthi is a React/Vite academic workspace with an Express, MongoDB, and Socket.IO API. Students can request accounts through `/register`; requests stay inactive until an administrator checks the official institutional record and approves them. Faculty and administrator accounts are provisioned by an administrator. There is no public faculty/admin role selection or demo role switcher.
 
 ## Requirements
 
@@ -15,7 +15,7 @@ Saarthi is a React/Vite academic workspace with an Express, MongoDB, and Socket.
 3. Install dependencies with `npm install`.
 4. Run `npm run admin:create` once to connect to MongoDB and create the first administrator. The script refuses to add another administrator if one already exists.
 5. Start the API with `npm run dev:server` and the UI with `npm run dev` in a second terminal. Vite proxies `/api` and `/socket.io` to `127.0.0.1:4000`.
-6. Open the Vite address and sign in with the account provisioned by the administrator. `/api/health` reports API/database availability.
+6. Open the Vite address. Students can submit a registration request at `/register`; an administrator signs in, verifies the ID and roster reference, and approves it under **Pending student registrations**. Faculty accounts are provisioned by an administrator. `/api/health` reports API/database availability.
 
 For production, set `NODE_ENV=production`, use HTTPS, set `CLIENT_ORIGINS` to the deployed frontend origin, configure the API reverse proxy, and provide a production-only JWT secret. HttpOnly cookies are Secure in production. Keep the frontend and API under the same site when using SameSite=Strict cookies.
 
