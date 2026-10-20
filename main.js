@@ -90,9 +90,16 @@ function hideLoader() {
 }
 
 function showToast(message, type = 'info') {
-    const container = document.getElementById('toastContainer');
+    let container = document.getElementById('toastContainer');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.className = 'toast-container';
+        document.body.appendChild(container);
+    }
     const toast = document.createElement('div');
     toast.className = `toast toast-${type}`;
+
     
     const icon = type === 'success' ? 'fa-check-circle' :
                 type === 'warning' ? 'fa-exclamation-triangle' :

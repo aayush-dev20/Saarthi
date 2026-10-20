@@ -95,15 +95,10 @@ function ensureHtml5QrcodeLoaded(callback) {
     }
 
     const cdns = [
-        // Try local project files first
         'html5-qrcode.min.js',
-        'vendor/html5-qrcode.min.js',
-        'js/html5-qrcode.min.js',
-        'assets/html5-qrcode.min.js',
-        // Updated CDN URLs
-        'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/dist/html5-qrcode.min.js',
-        'https://unpkg.com/html5-qrcode@2.3.8/dist/html5-qrcode.min.js',
-        'https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js'
+        'https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js',
+        'https://cdn.jsdelivr.net/npm/html5-qrcode@2.3.8/html5-qrcode.min.js',
+        'https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js'
     ];
 
     let idx = 0;

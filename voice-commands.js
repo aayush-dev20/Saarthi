@@ -2,24 +2,37 @@
 // VOICE COMMAND SYSTEM
 // ==============================================
 function initVoiceCommands() {
-    const voiceBtn = document.getElementById('voiceIndicator');
+    const buttons = [
+        document.getElementById('voiceIndicator'),
+        document.getElementById('voiceToggle')
+    ].filter(Boolean);
     
-    voiceBtn.addEventListener('click', () => {
-        if (!AppState.isVoiceActive) {
-            startVoiceRecognition();
-        } else {
-            stopVoiceRecognition();
-        }
+    if (buttons.length === 0) return;
+    
+    buttons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (!AppState.isVoiceActive) {
+                startVoiceRecognition();
+            } else {
+                stopVoiceRecognition();
+            }
+        });
     });
 }
 
 function startVoiceRecognition() {
     AppState.isVoiceActive = true;
-    document.getElementById('voiceIndicator').classList.add('listening');
+    const indicators = [
+        document.getElementById('voiceIndicator'),
+        document.getElementById('voiceToggle')
+    ].filter(Boolean);
+    indicators.forEach(el => el.classList.add('listening'));
     showToast('Listening for voice commands...', 'info');
     
     // Simulate voice command processing
     setTimeout(() => {
+        if (!AppState.isVoiceActive) return;
         const commands = [
             'show dashboard',
             'scan qr code',
@@ -31,16 +44,21 @@ function startVoiceRecognition() {
         const randomCommand = commands[Math.floor(Math.random() * commands.length)];
         processVoiceCommand(randomCommand);
         
-        // Auto-stop after 5 seconds
-        setTimeout(stopVoiceRecognition, 5000);
+        // Auto-stop after 4 seconds
+        setTimeout(stopVoiceRecognition, 4000);
     }, 1000);
 }
 
 function stopVoiceRecognition() {
     AppState.isVoiceActive = false;
-    document.getElementById('voiceIndicator').classList.remove('listening');
+    const indicators = [
+        document.getElementById('voiceIndicator'),
+        document.getElementById('voiceToggle')
+    ].filter(Boolean);
+    indicators.forEach(el => el.classList.remove('listening'));
     showToast('Voice recognition stopped', 'info');
 }
+
 
 function processVoiceCommand(command) {
     showToast(`Voice command: "${command}"`, 'success');
