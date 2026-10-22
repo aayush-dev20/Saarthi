@@ -24,6 +24,7 @@ import {
 } from 'recharts';
 import StatCard from '../../components/StatCard';
 import Badge from '../../components/Badge';
+import QRScannerModal from '../../components/QRScannerModal';
 import { api } from '../../services/api';
 import { subscribeToStudentLiveUpdates } from '../../services/socket';
 import { performanceTrends } from '../../data/mockData';
@@ -31,6 +32,7 @@ import { performanceTrends } from '../../data/mockData';
 export default function StudentDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
   const fetchDashboard = async () => {
     try {
@@ -96,20 +98,28 @@ export default function StudentDashboard() {
         </div>
 
         <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setIsScannerOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition-colors"
+          >
+            <QrCode className="w-4 h-4 text-white" />
+            <span>Scan Classroom QR</span>
+          </button>
+
           <NavLink
             to="/student/attendance"
             className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors"
           >
-            <QrCode className="w-4 h-4 text-slate-600" />
-            <span>Attendance Log</span>
+            <span>Log</span>
           </NavLink>
 
           <NavLink
             to="/student/learning-gaps"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition-colors"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors"
           >
             <GitFork className="w-4 h-4" />
-            <span>Learning Gap Engine</span>
+            <span>Learning Gaps</span>
           </NavLink>
         </div>
       </div>
@@ -363,6 +373,13 @@ export default function StudentDashboard() {
           </div>
         </div>
       </div>
+
+      {/* GPS-Based Classroom Attendance Scanner Modal */}
+      <QRScannerModal
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onAttendanceMarked={() => fetchDashboard()}
+      />
     </div>
   );
 }

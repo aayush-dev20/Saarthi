@@ -1,6 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Modal from './Modal';
-import { QrCode, CheckCircle2, AlertCircle, Camera, Hash, Loader2, KeyRound, ShieldAlert } from 'lucide-react';
+import {
+  QrCode,
+  CheckCircle2,
+  AlertCircle,
+  Camera,
+  Hash,
+  Loader2,
+  KeyRound,
+  ShieldAlert,
+  MapPin,
+  Navigation,
+  ShieldCheck,
+  Info,
+} from 'lucide-react';
 import { api } from '../services/api';
 
 export default function QRScannerModal({ isOpen, onClose, onAttendanceMarked }) {
@@ -9,7 +22,9 @@ export default function QRScannerModal({ isOpen, onClose, onAttendanceMarked }) 
   const [challengePin, setChallengePin] = useState('');
   const [status, setStatus] = useState(null); // 'success', 'error', 'flagged'
   const [message, setMessage] = useState('');
+  const [verificationDetails, setVerificationDetails] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [geoPromptState, setGeoPromptState] = useState('ready'); // 'ready', 'acquiring', 'granted', 'denied'
 
   const videoRef = useRef(null);
   const streamRef = useRef(null);
@@ -54,6 +69,57 @@ export default function QRScannerModal({ isOpen, onClose, onAttendanceMarked }) 
     };
   }, [isOpen, activeTab]);
 
+  /**
+   * Captures GPS location on-demand via the Browser Geolocation API.
+   * Restricts capture to the moment of attendance check-in only (no background tracking).
+   */
+  const captureDeviceLocation = () => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve({
+          permission: 'UNAVAILABLE',
+          latitude: null,
+          longitude: null,
+          accuracy: null,
+          locationTimestamp: Date.now(),
+        });
+        return;
+      }
+
+      setGeoPromptState('acquiring');
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          setGeoPromptState('granted');
+          resolve({
+            permission: 'GRANTED',
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            accuracy: Math.round(pos.coords.accuracy),
+            locationTimestamp: pos.timestamp || Date.now(),
+          });
+        },
+        (err) => {
+          console.warn('Geolocation error / permission declined:', err.message);
+          const perm = err.code === 1 ? 'DENIED' : err.code === 3 ? 'TIMEOUT' : 'UNAVAILABLE';
+          setGeoPromptState('denied');
+          resolve({
+            permission: perm,
+            latitude: null,
+            longitude: null,
+            accuracy: null,
+            locationTimestamp: Date.now(),
+          });
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 8000,
+          maximumAge: 0,
+        }
+      );
+    });
+  };
+
   const handleVerify = async (e) => {
     if (e) e.preventDefault();
     if (!code.trim()) {
@@ -64,32 +130,52 @@ export default function QRScannerModal({ isOpen, onClose, onAttendanceMarked }) 
 
     setLoading(true);
     setStatus(null);
+    setVerificationDetails(null);
 
     try {
-      // Server-side verification (Anti-Proxy Risk Scoring)
-      const res = await api.verifyStudentAttendance({
+      // 1. Capture one-time device location upon scanning
+      const locationData = await captureDeviceLocation();
+
+      // 2. Submit to backend API: POST /api/attendance/scan
+      const payload = {
+        qrToken: code.trim(),
         code: code.trim(),
+        latitude: locationData.latitude,
+        longitude: locationData.longitude,
+        accuracy: locationData.accuracy,
+        locationTimestamp: locationData.locationTimestamp,
+        locationPermission: locationData.permission,
         challengePin: challengePin.trim(),
-        method: activeTab === 'camera' ? 'QR_VERIFIED' : 'MANUAL_CODE',
-        clientTimestamp: Date.now(),
-      });
+      };
+
+      const res = await api.scanAttendance(payload);
 
       if (res.data?.verificationStatus === 'FLAGGED_FOR_REVIEW') {
         setStatus('flagged');
         setMessage(res.message || 'Attendance logged for faculty review (Proximity check requires teacher confirmation).');
       } else {
         setStatus('success');
-        setMessage(res.message || 'Attendance successfully verified by examination server!');
+        setMessage(res.message || 'Attendance successfully verified within classroom boundary!');
       }
+
+      setVerificationDetails(res.data);
 
       setTimeout(() => {
         if (onAttendanceMarked) onAttendanceMarked(res.data);
-        setStatus(null);
-        setCode('');
-        setChallengePin('');
+      }, 500);
+
+      // Auto close modal if verified cleanly
+      if (res.data?.verificationStatus === 'VERIFIED') {
+        setTimeout(() => {
+          setStatus(null);
+          setCode('');
+          setChallengePin('');
+          setLoading(false);
+          onClose();
+        }, 2400);
+      } else {
         setLoading(false);
-        onClose();
-      }, 1600);
+      }
     } catch (err) {
       setStatus('error');
       setMessage(err.data?.message || err.message || 'Verification rejected: Invalid, expired, or duplicate session token.');
@@ -135,18 +221,56 @@ export default function QRScannerModal({ isOpen, onClose, onAttendanceMarked }) 
           </button>
         </div>
 
+        {/* Location Privacy Notice */}
+        <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-start gap-2">
+          <MapPin className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+          <div className="leading-relaxed text-[11px]">
+            <span className="font-semibold text-slate-800">GPS Classroom Verification:</span> Your device location is requested once upon check-in to verify you are within the designated classroom geofence. Background tracking is never used.
+          </div>
+        </div>
+
         {/* Status Alert Banner */}
         {status === 'success' && (
-          <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>{message}</span>
+          <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs space-y-1.5">
+            <div className="flex items-center gap-2 font-bold text-emerald-900">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+              <span>{message}</span>
+            </div>
+            {verificationDetails && (
+              <div className="text-[11px] text-emerald-700 bg-white/70 p-2 rounded-lg border border-emerald-100 space-y-0.5">
+                <div><strong>Classroom:</strong> {verificationDetails.classroom || 'Classroom 12'}</div>
+                {verificationDetails.distanceFromClassroom != null && (
+                  <div>
+                    <strong>Distance:</strong> {verificationDetails.distanceFromClassroom}m (Allowed Radius: {verificationDetails.configuredRadius || 50}m)
+                  </div>
+                )}
+                {verificationDetails.gpsAccuracy != null && (
+                  <div><strong>GPS Accuracy:</strong> &plusmn;{verificationDetails.gpsAccuracy}m</div>
+                )}
+                <div><strong>Live Status:</strong> Sent to teacher dashboard in real-time</div>
+              </div>
+            )}
           </div>
         )}
 
         {status === 'flagged' && (
-          <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-center gap-2">
-            <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />
-            <span>{message}</span>
+          <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs space-y-1.5">
+            <div className="flex items-center gap-2 font-bold text-amber-900">
+              <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>{message}</span>
+            </div>
+            {verificationDetails && (
+              <div className="text-[11px] text-amber-800 bg-white/70 p-2 rounded-lg border border-amber-100 space-y-0.5">
+                <div><strong>Status:</strong> Flagged for Teacher Audit</div>
+                {verificationDetails.flagReason && (
+                  <div><strong>Audit Reason:</strong> {verificationDetails.flagReason}</div>
+                )}
+                {verificationDetails.distanceFromClassroom != null && (
+                  <div><strong>Reported Distance:</strong> {verificationDetails.distanceFromClassroom}m</div>
+                )}
+                <div className="text-slate-500 pt-0.5">The teacher can review and manually verify your attendance in their console.</div>
+              </div>
+            )}
           </div>
         )}
 
@@ -221,10 +345,13 @@ export default function QRScannerModal({ isOpen, onClose, onAttendanceMarked }) 
             {loading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Verifying Cryptographic Token with Server...</span>
+                <span>Acquiring GPS &amp; Verifying Location...</span>
               </>
             ) : (
-              <span>Submit for Verification</span>
+              <span className="flex items-center gap-1.5">
+                <Navigation className="w-3.5 h-3.5" />
+                <span>Verify Attendance with GPS Location</span>
+              </span>
             )}
           </button>
         </form>

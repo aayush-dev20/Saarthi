@@ -27,7 +27,7 @@ const attendanceRecordSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['PRESENT', 'ABSENT'],
+      enum: ['PRESENT', 'ABSENT', 'FLAGGED_FOR_REVIEW', 'REJECTED'],
       default: 'PRESENT',
     },
     verifiedAt: {
@@ -36,7 +36,16 @@ const attendanceRecordSchema = new mongoose.Schema(
     },
     room: {
       type: String,
-      default: 'LT-102',
+      default: 'Classroom 12',
+    },
+    classroomName: {
+      type: String,
+      default: 'Classroom 12',
+    },
+    classroom: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Classroom',
+      default: null,
     },
     ipAddress: {
       type: String,
@@ -44,9 +53,26 @@ const attendanceRecordSchema = new mongoose.Schema(
     },
     verificationStatus: {
       type: String,
-      enum: ['VERIFIED', 'FLAGGED_FOR_REVIEW', 'FACULTY_OVERRIDE'],
+      enum: ['VERIFIED', 'FLAGGED_FOR_REVIEW', 'FACULTY_OVERRIDE', 'REJECTED'],
       default: 'VERIFIED',
       index: true,
+    },
+    locationVerification: {
+      type: String,
+      enum: [
+        'WITHIN_RADIUS',
+        'OUT_OF_RADIUS',
+        'INCONCLUSIVE_ACCURACY',
+        'PERMISSION_DENIED',
+        'MANUAL_OVERRIDE',
+        'NOT_EVALUATED',
+      ],
+      default: 'WITHIN_RADIUS',
+      index: true,
+    },
+    verificationResult: {
+      type: String,
+      default: 'Verified',
     },
     flagReason: {
       type: String,
@@ -71,6 +97,19 @@ const attendanceRecordSchema = new mongoose.Schema(
       lng: Number,
       accuracyMeters: Number,
       distanceMeters: Number,
+      locationTimestamp: Date,
+      locationPermission: {
+        type: String,
+        enum: ['GRANTED', 'DENIED', 'UNAVAILABLE', 'TIMEOUT'],
+        default: 'GRANTED',
+      },
+      verificationResult: String,
+    },
+    classroomGeo: {
+      lat: Number,
+      lng: Number,
+      radiusMeters: Number,
+      maxAccuracyMeters: Number,
     },
     reviewedBy: {
       type: mongoose.Schema.Types.ObjectId,

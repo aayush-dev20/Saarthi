@@ -18,6 +18,7 @@ import facultyRoutes from './routes/faculty.routes.js';
 import adminRoutes from './routes/admin.routes.js';
 import transportRoutes from './routes/transport.routes.js';
 import hostelRoutes from './routes/hostel.routes.js';
+import attendanceRoutes from './routes/attendance.routes.js';
 
 import path from 'path';
 import fs from 'fs';
@@ -61,6 +62,7 @@ app.use('/api/faculty', facultyRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/transport', transportRoutes);
 app.use('/api/hostel', hostelRoutes);
+app.use('/api/attendance', attendanceRoutes);
 
 // Fallback 404 for undefined API routes
 app.use('/api', (req, res) => {

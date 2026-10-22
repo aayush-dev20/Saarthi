@@ -43,9 +43,13 @@ export function disconnectSocket() {
 }
 
 // Attendance session subscription
-export function joinAttendanceSession(sessionId, onAttendanceRecorded) {
+export function joinAttendanceSession(sessionId, onAttendanceRecorded, onScanReceived) {
   const s = getSocket();
   s.emit('join_attendance_session', sessionId);
+
+  if (onScanReceived) {
+    s.on('attendance:scan_received', onScanReceived);
+  }
 
   if (onAttendanceRecorded) {
     s.on('attendance:recorded', onAttendanceRecorded);
@@ -53,6 +57,9 @@ export function joinAttendanceSession(sessionId, onAttendanceRecorded) {
 
   return () => {
     s.emit('leave_attendance_session', sessionId);
+    if (onScanReceived) {
+      s.off('attendance:scan_received', onScanReceived);
+    }
     if (onAttendanceRecorded) {
       s.off('attendance:recorded', onAttendanceRecorded);
     }

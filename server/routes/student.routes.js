@@ -14,7 +14,8 @@ import { PracticeSet, PracticeAttempt, AuditLog } from '../models/PracticeSet.js
 import { LearningResource } from '../models/LearningResource.js';
 import { LeaderboardEntry } from '../models/Leaderboard.js';
 import { verifySignedQRToken } from '../utils/qrCrypto.js';
-import { emitAttendanceRecorded } from '../sockets/index.js';
+import { emitAttendanceRecorded, emitAttendanceScanNotification } from '../sockets/index.js';
+import { evaluateClassroomLocation } from '../utils/haversine.js';
 
 const router = express.Router();
 

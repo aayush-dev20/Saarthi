@@ -45,15 +45,22 @@ export function initSocketIO(httpServer) {
     socket.join(`role:${user.role}`);
 
     // Faculty room for live attendance monitoring
-    socket.on('join_attendance_session', (sessionId) => {
-      if (user.role === 'faculty' || user.role === 'admin') {
-        socket.join(`session:${sessionId}`);
+    const handleJoinSession = (payload) => {
+      const sessionId = typeof payload === 'object' && payload ? payload.sessionId : payload;
+      if (sessionId && (user.role === 'faculty' || user.role === 'admin')) {
+        socket.join(`session:${sessionId.toString()}`);
         console.log(`📡 Faculty ${user.name} subscribed to session room: session:${sessionId}`);
       }
-    });
+    };
 
-    socket.on('leave_attendance_session', (sessionId) => {
-      socket.leave(`session:${sessionId}`);
+    socket.on('join_attendance_session', handleJoinSession);
+    socket.on('attendance:join', handleJoinSession);
+
+    socket.on('leave_attendance_session', (payload) => {
+      const sessionId = typeof payload === 'object' && payload ? payload.sessionId : payload;
+      if (sessionId) {
+        socket.leave(`session:${sessionId.toString()}`);
+      }
     });
 
     socket.on('disconnect', () => {
@@ -73,6 +80,28 @@ export function emitAttendanceRecorded(sessionId, studentData) {
   io.to(`session:${sessionId}`).emit('attendance:recorded', {
     sessionId,
     student: studentData,
+    timestamp: new Date().toISOString(),
+  });
+  // Also emit dedicated live scan notification
+  io.to(`session:${sessionId}`).emit('attendance:scan_received', {
+    sessionId,
+    notification: studentData,
+    timestamp: new Date().toISOString(),
+  });
+}
+
+export function emitAttendanceScanNotification(sessionId, payload) {
+  if (!io) return;
+  io.to(`session:${sessionId}`).emit('attendance:scan_received', {
+    sessionId,
+    ...payload,
+    timestamp: new Date().toISOString(),
+  });
+  // Also emit attendance:recorded for backwards compatibility
+  io.to(`session:${sessionId}`).emit('attendance:recorded', {
+    sessionId,
+    student: payload.student,
+    record: payload,
     timestamp: new Date().toISOString(),
   });
 }

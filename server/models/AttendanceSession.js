@@ -19,9 +19,18 @@ const attendanceSessionSchema = new mongoose.Schema(
       required: true,
       default: 'CSE-A',
     },
+    classroom: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Classroom',
+      default: null,
+    },
+    classroomName: {
+      type: String,
+      default: 'Classroom 12',
+    },
     room: {
       type: String,
-      default: 'LT-102',
+      default: 'Classroom 12',
     },
     sessionCode: {
       type: String,
@@ -56,9 +65,12 @@ const attendanceSessionSchema = new mongoose.Schema(
       default: '10.182.*',
     },
     classroomGeo: {
-      lat: { type: Number, default: 28.5355 },
-      lng: { type: Number, default: 77.3910 },
-      radiusMeters: { type: Number, default: 60 },
+      lat: { type: Number, default: 30.7333 },
+      lng: { type: Number, default: 76.7794 },
+      radiusMeters: { type: Number, default: 50 },
+      maxAccuracyMeters: { type: Number, default: 35 },
+      campus: { type: String, default: 'Indo Global Campus' },
+      building: { type: String, default: 'Main Academic Block' },
     },
     requireProximityCheck: {
       type: Boolean,

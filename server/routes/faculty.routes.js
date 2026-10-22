@@ -9,6 +9,7 @@ import { Enrollment } from '../models/Enrollment.js';
 import { Mark } from '../models/Mark.js';
 import { AttendanceSession } from '../models/AttendanceSession.js';
 import { AttendanceRecord } from '../models/AttendanceRecord.js';
+import { Classroom } from '../models/Classroom.js';
 import { Assignment, AssignmentSubmission } from '../models/Assignment.js';
 import { AssessmentAttempt } from '../models/DiagnosticQuestion.js';
 import { PracticeAttempt, AuditLog } from '../models/PracticeSet.js';
@@ -158,13 +159,17 @@ const startSessionSchema = {
     subjectId: z.string().optional(),
     subjectCode: z.string().optional(),
     section: z.string().default('CSE-A'),
-    room: z.string().default('LT-102'),
+    room: z.string().optional(),
+    classroomId: z.string().optional(),
+    classroomName: z.string().optional(),
+    radiusMeters: z.number().optional(),
+    maxAccuracyMeters: z.number().optional(),
   }),
 };
 
 router.post('/attendance/session/start', validate(startSessionSchema), async (req, res, next) => {
   try {
-    const { subjectId, subjectCode, section, room } = req.body;
+    const { subjectId, subjectCode, section, room, classroomId, classroomName, radiusMeters, maxAccuracyMeters } = req.body;
 
     let subject = null;
     if (subjectId) {
@@ -186,6 +191,26 @@ router.post('/attendance/session/start', validate(startSessionSchema), async (re
       { isActive: false }
     );
 
+    // Look up classroom geofence profile
+    let classroom = null;
+    if (classroomId) {
+      classroom = await Classroom.findById(classroomId);
+    } else if (classroomName) {
+      classroom = await Classroom.findOne({ name: classroomName });
+    } else if (room) {
+      classroom = await Classroom.findOne({ name: room });
+    }
+
+    if (!classroom) {
+      classroom = await Classroom.findOne({ name: 'Classroom 12' });
+    }
+
+    const assignedRoomName = classroom?.name || room || classroomName || 'Classroom 12';
+    const finalRadius = radiusMeters || classroom?.radiusMeters || 50;
+    const finalMaxAccuracy = maxAccuracyMeters || classroom?.maxAccuracyMeters || 35;
+    const classroomLat = classroom?.lat || 30.7333;
+    const classroomLng = classroom?.lng || 76.7794;
+
     // Generate random 6-character session pass code e.g. MATH-4812 and 3-digit challenge PIN
     const randomDigits = Math.floor(1000 + Math.random() * 9000);
     const sessionCode = `${subject.code.split('-')[0]}-${randomDigits}`;
@@ -196,13 +221,23 @@ router.post('/attendance/session/start', validate(startSessionSchema), async (re
       subject: subject._id,
       faculty: req.user._id,
       section: section || 'CSE-A',
-      room: room || 'LT-102',
+      room: assignedRoomName,
+      classroomName: assignedRoomName,
+      classroom: classroom?._id || null,
       sessionCode,
       challengePin,
       currentToken: 'pending_init',
       tokenExpiresAt: new Date(Date.now() + 15000),
       sessionExpiresAt: new Date(Date.now() + 60 * 60 * 1000), // 1 hour session window
       isActive: true,
+      classroomGeo: {
+        lat: classroomLat,
+        lng: classroomLng,
+        radiusMeters: finalRadius,
+        maxAccuracyMeters: finalMaxAccuracy,
+        campus: classroom?.campus || 'Indo Global Campus',
+        building: classroom?.building || 'Main Academic Block',
+      },
     });
 
     // Generate signed rotating token
@@ -226,6 +261,10 @@ router.post('/attendance/session/start', validate(startSessionSchema), async (re
         },
         section: newSession.section,
         room: newSession.room,
+        classroomName: newSession.classroomName,
+        classroomGeo: newSession.classroomGeo,
+        configuredRadius: newSession.classroomGeo.radiusMeters,
+        maxAccuracyMeters: newSession.classroomGeo.maxAccuracyMeters,
         currentToken: newSession.currentToken,
         tokenExpiresAt: newSession.tokenExpiresAt,
         ttlSeconds: tokenData.ttlSeconds,
@@ -278,7 +317,7 @@ router.get('/attendance/session/:id/live', async (req, res, next) => {
       .populate('student', 'name idNumber email section avatar')
       .sort({ createdAt: -1 });
 
-    res.json({
+    const responseData = {
       success: true,
       data: {
         session: {
@@ -287,17 +326,73 @@ router.get('/attendance/session/:id/live', async (req, res, next) => {
           subject: session.subject,
           section: session.section,
           room: session.room,
+          classroomName: session.classroomName || session.room || 'Classroom 12',
+          classroomGeo: session.classroomGeo,
+          configuredRadius: session.classroomGeo?.radiusMeters || 50,
+          maxAccuracyMeters: session.classroomGeo?.maxAccuracyMeters || 35,
           isActive: session.isActive,
-          totalPresent: records.length,
+          totalPresent: records.filter((r) => r.status === 'PRESENT').length,
+          totalFlagged: records.filter((r) => r.verificationStatus === 'FLAGGED_FOR_REVIEW').length,
+          totalScanned: records.length,
         },
-        records: records.map((r) => ({
-          id: r._id,
-          student: r.student,
-          method: r.method,
-          verifiedAt: r.verifiedAt,
-        })),
+        records: records.map((r) => {
+          const dist = r.clientGeo?.distanceMeters;
+          const acc = r.clientGeo?.accuracyMeters;
+          const perm = r.clientGeo?.locationPermission;
+          const radius = session.classroomGeo?.radiusMeters || 50;
+
+          let locVerif = 'Within configured radius';
+          if (perm === 'DENIED') {
+            locVerif = 'Location permission denied';
+          } else if (r.locationVerification === 'OUT_OF_RADIUS' || (dist != null && dist > radius)) {
+            locVerif = 'Outside configured radius';
+          } else if (r.locationVerification === 'INCONCLUSIVE_ACCURACY') {
+            locVerif = 'Inconclusive: Poor GPS accuracy';
+          } else if (r.locationVerification === 'PERMISSION_DENIED') {
+            locVerif = 'Location permission denied';
+          }
+
+          return {
+            id: r._id,
+            recordId: r._id,
+            _id: r._id,
+            student: r.student,
+            studentName: r.student?.name || 'Unknown Student',
+            studentId: r.student?.idNumber || 'N/A',
+            rollNo: r.student?.idNumber || 'N/A',
+            method: r.method,
+            verifiedAt: r.verifiedAt,
+            scanTime: new Date(r.verifiedAt).toLocaleTimeString([], {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+            }),
+            status: r.status,
+            attendanceStatus:
+              r.status === 'PRESENT'
+                ? 'Present — subject to verification rules'
+                : 'Flagged for review — teacher audit required',
+            verificationStatus: r.verificationStatus,
+            locationVerification: locVerif,
+            locationStatus: r.locationVerification || (dist != null && dist <= radius ? 'WITHIN_RADIUS' : 'OUT_OF_RADIUS'),
+            distanceMeters: dist ?? null,
+            distanceFromClassroom: dist != null ? `${dist} metres` : 'N/A',
+            gpsAccuracy: acc != null ? `${acc} metres` : 'N/A',
+            gpsAccuracyValue: acc ?? null,
+            locationPermission: perm === 'DENIED' ? 'Denied' : 'Granted',
+            flagReason: r.flagReason,
+            proximityScore: r.proximityScore,
+            classroom: r.classroomName || session.room || 'Classroom 12',
+            subject: session.subject?.name,
+          };
+        }),
       },
-    });
+    };
+
+    // Alias attendees for convenience
+    responseData.data.attendees = responseData.data.records;
+
+    res.json(responseData);
   } catch (err) {
     next(err);
   }
@@ -353,19 +448,22 @@ router.get('/attendance/session/:id/flagged', async (req, res, next) => {
 const overrideSchema = {
   body: z.object({
     recordId: z.string(),
-    overrideStatus: z.enum(['VERIFIED', 'ABSENT']),
+    overrideStatus: z.enum(['VERIFIED', 'ABSENT', 'REJECTED', 'PRESENT']).optional(),
+    status: z.enum(['VERIFIED', 'ABSENT', 'REJECTED', 'PRESENT']).optional(),
     reason: z.string().min(3),
   }),
 };
 
 router.post('/attendance/override', validate(overrideSchema), async (req, res, next) => {
   try {
-    const { recordId, overrideStatus, reason } = req.body;
+    const { recordId, overrideStatus, status, reason } = req.body;
+    const finalOverride = overrideStatus || status || 'VERIFIED';
     const record = await AttendanceRecord.findById(recordId).populate('student', 'name idNumber');
     if (!record) return res.status(404).json({ success: false, message: 'Record not found' });
 
     record.verificationStatus = 'FACULTY_OVERRIDE';
-    record.status = overrideStatus === 'VERIFIED' ? 'PRESENT' : 'ABSENT';
+    record.locationVerification = 'MANUAL_OVERRIDE';
+    record.status = (finalOverride === 'VERIFIED' || finalOverride === 'PRESENT') ? 'PRESENT' : 'REJECTED';
     record.reviewedBy = req.user._id;
     record.reviewNote = reason;
     await record.save();
