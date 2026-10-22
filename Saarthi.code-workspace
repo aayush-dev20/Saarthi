@@ -1,0 +1,11 @@
+{
+  "folders": [
+    {
+      "name": "Saarthi Smart Campus",
+      "path": "."
+    }
+  ],
+  "settings": {
+    "editor.formatOnSave": true
+  }
+}

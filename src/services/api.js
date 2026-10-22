@@ -58,7 +58,7 @@ export const api = {
   login: async (idNumber, password) => {
     const res = await request('/auth/login', {
       method: 'POST',
-      body: { idNumber, password },
+      body: { identifier: idNumber, password },
     });
     if (res.token && res.user) {
       setAuthSession(res.token, res.user);
@@ -116,6 +116,7 @@ export const api = {
 
   // Administrator Endpoints
   getAdminDashboard: () => request('/admin/dashboard'),
+  getAdminAnalytics: () => request('/admin/dashboard'),
   getAdminUsers: (params = '') => request(`/admin/users${params ? `?${params}` : ''}`),
   updateUserRole: (id, role) => request(`/admin/users/${id}/role`, { method: 'PUT', body: { role } }),
   getAdminPendingUsers: () => request('/admin/pending-users'),
@@ -126,6 +127,8 @@ export const api = {
 
   // Transport Endpoints
   getTransportDashboard: () => request('/transport/dashboard'),
+  getTransportBuses: () => request('/transport/buses'),
+  getTransportRoutes: () => request('/transport/routes'),
   getBuses: () => request('/transport/buses'),
   updateBusStatus: (id, payload) => request(`/transport/buses/${id}/status`, { method: 'PUT', body: payload }),
   getBusRoutes: () => request('/transport/routes'),

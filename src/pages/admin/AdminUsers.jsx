@@ -28,7 +28,7 @@ export default function AdminUsers() {
     try {
       setLoading(true);
       const res = await api.getAdminUsers(`search=${encodeURIComponent(search)}&role=${roleFilter}`);
-      const list = res.data?.users || (Array.isArray(res.data) ? res.data : []);
+      const list = res.data?.users || res.data?.data || (Array.isArray(res.data) ? res.data : []);
       setUsers(list);
     } catch (err) {
       console.warn('Failed to fetch admin users:', err.message);
