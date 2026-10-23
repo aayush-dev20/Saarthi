@@ -71,6 +71,27 @@ export default function TeacherDashboard() {
       (s.rollNo || '').includes(searchQuery)
   );
 
+  const flaggedGapsSummary = dashboardData?.flaggedGapsSummary || [
+    {
+      subject: 'Engineering Math IV',
+      concept: 'Integration by Parts (Prerequisite)',
+      studentsAffected: faculty.flaggedGapsCount || 1,
+      severity: 'High Priority',
+    },
+    {
+      subject: 'Engineering Math IV',
+      concept: 'Differential Operators & Roots',
+      studentsAffected: 2,
+      severity: 'Moderate',
+    },
+    {
+      subject: 'Engineering Math IV',
+      concept: 'Eigenvalue Calculation',
+      studentsAffected: 1,
+      severity: 'Moderate',
+    },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Faculty Header */}
@@ -157,7 +178,7 @@ export default function TeacherDashboard() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          {teacherFlaggedGapsSummary.map((gap, idx) => (
+          {flaggedGapsSummary.map((gap, idx) => (
             <div key={idx} className="bg-white p-3.5 rounded-xl border border-amber-200/70 shadow-2xs">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
                 {gap.subject}

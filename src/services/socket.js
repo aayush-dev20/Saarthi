@@ -6,10 +6,14 @@ let socket = null;
 export function getSocket() {
   if (!socket) {
     const token = getToken();
+    if (!token) {
+      // Don't attempt connection without token
+      return null;
+    }
     socket = io('/', {
       auth: { token },
       autoConnect: true,
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
     });
 
     socket.on('connect', () => {
@@ -26,11 +30,13 @@ export function getSocket() {
 export function reconnectSocketWithToken(token) {
   if (socket) {
     socket.disconnect();
+    socket = null;
   }
+  if (!token) return null;
   socket = io('/', {
     auth: { token },
     autoConnect: true,
-    transports: ['websocket', 'polling'],
+    transports: ['polling', 'websocket'],
   });
   return socket;
 }
@@ -45,6 +51,7 @@ export function disconnectSocket() {
 // Attendance session subscription
 export function joinAttendanceSession(sessionId, onAttendanceRecorded, onScanReceived) {
   const s = getSocket();
+  if (!s) return;
   s.emit('join_attendance_session', sessionId);
 
   if (onScanReceived) {
