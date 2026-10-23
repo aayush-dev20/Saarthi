@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { NavLink } from 'react-router-dom';
 import {
   Compass,
   ArrowRight,
@@ -11,56 +11,108 @@ import {
   BrainCircuit,
   Users2,
   CheckCircle2,
-  ShieldCheck,
   ChevronRight,
   LogIn,
+  BookOpen,
+  FileText,
+  UtensilsCrossed,
+  Building,
+  Bus,
+  Trophy,
+  Info,
 } from 'lucide-react';
-import Modal from '../../components/Modal';
-import { setCurrentUser } from '../../utils/storage';
-import { studentProfile, teacherProfile } from '../../data/mockData';
-import { useAuth } from '../../context/AuthContext';
+
+/* ─── Feature card data ──────────────────────────────────────────── */
+const features = [
+  {
+    icon: CalendarCheck,
+    iconBg: 'bg-indigo-100 text-indigo-700',
+    title: 'QR Attendance Tracking',
+    desc: 'Dynamic time-based QR code generation for teachers and instant camera or code verification for students.',
+    status: 'live',
+    cta: { label: 'View Attendance', to: '/login' },
+  },
+  {
+    icon: GraduationCap,
+    iconBg: 'bg-emerald-100 text-emerald-700',
+    title: 'Academics & Marks',
+    desc: 'Subject-wise internal assessments, semester exams, assignments and class grade analytics.',
+    status: 'live',
+    cta: { label: 'View Academics', to: '/login' },
+  },
+  {
+    icon: GitFork,
+    iconBg: 'bg-amber-100 text-amber-800',
+    title: 'Prerequisite Gap Graph',
+    desc: 'Interactive concept dependency mapping powered by React Flow to pinpoint root-cause learning weaknesses.',
+    status: 'live',
+    cta: { label: 'Explore Gaps', to: '/login' },
+  },
+  {
+    icon: TrendingUp,
+    iconBg: 'bg-blue-100 text-blue-700',
+    title: 'Practice & Reassessment',
+    desc: 'Targeted practice modules with step-by-step explanations, paired with reassessment to verify growth.',
+    status: 'live',
+    cta: { label: 'Start Practice', to: '/login' },
+  },
+  {
+    icon: BookOpen,
+    iconBg: 'bg-violet-100 text-violet-700',
+    title: 'Digital Library',
+    desc: 'HMAC-verified library passes, book catalogue, issue/return tracking and automated overdue fine calculation.',
+    status: 'live',
+    cta: { label: 'Browse Library', to: '/login' },
+  },
+  {
+    icon: FileText,
+    iconBg: 'bg-rose-100 text-rose-700',
+    title: 'Leave Management',
+    desc: 'Apply for leave, track approval status, view history and receive real-time notifications on decisions.',
+    status: 'live',
+    cta: { label: 'Apply for Leave', to: '/login' },
+  },
+  {
+    icon: UtensilsCrossed,
+    iconBg: 'bg-orange-100 text-orange-700',
+    title: 'Campus Canteen',
+    desc: 'Browse the menu, add items to cart, place orders with OTP verification and track order status live.',
+    status: 'live',
+    cta: { label: 'Order Food', to: '/login' },
+  },
+  {
+    icon: Trophy,
+    iconBg: 'bg-yellow-100 text-yellow-700',
+    title: 'CGPA Leaderboard',
+    desc: 'Credit-weighted GPA rankings with 4-tier tie-breaking. Toggle between CGPA and SGPA views.',
+    status: 'live',
+    cta: { label: 'View Rankings', to: '/login' },
+  },
+  {
+    icon: Building,
+    iconBg: 'bg-teal-100 text-teal-700',
+    title: 'Hostel & Outing',
+    desc: 'Room allocation, outing request management, warden approvals and real-time hostel analytics.',
+    status: 'live',
+    cta: { label: 'Hostel Portal', to: '/login' },
+  },
+  {
+    icon: Bus,
+    iconBg: 'bg-cyan-100 text-cyan-700',
+    title: 'Transport Services',
+    desc: 'Route management, outing attendance tracking and transport manager dashboard.',
+    status: 'live',
+    cta: { label: 'Transport Portal', to: '/login' },
+  },
+];
 
 export default function LandingPage() {
-  const navigate = useNavigate();
-  const { switchRole } = useAuth();
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState('login'); // 'login' or 'register'
-  const [role, setRole] = useState('student');
-  const [idNumber, setIdNumber] = useState('S1001');
-  const [password, setPassword] = useState('student123');
-  const [name, setName] = useState('Aayush Sharma');
-  const [email, setEmail] = useState('aayush.dev@college.edu');
-
-  const handleRoleSelect = (selectedRole) => {
-    setRole(selectedRole);
-    if (selectedRole === 'student') {
-      setIdNumber('S1001');
-      setPassword('student123');
-      setName('Aayush Sharma');
-      setEmail('aayush.dev@college.edu');
-    } else {
-      setIdNumber('T2001');
-      setPassword('teacher123');
-      setName('Dr. Sarah Jenkins');
-      setEmail('sarah.jenkins@faculty.edutrack.edu');
-    }
-  };
-
-  const handleAuthSubmit = async (e) => {
-    e.preventDefault();
-    const targetRole = role === 'teacher' ? 'faculty' : role;
-    if (switchRole) {
-      await switchRole(targetRole);
-    }
-    navigate(targetRole === 'faculty' ? '/teacher/dashboard' : '/student/dashboard');
-  };
-
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
-      {/* Navigation */}
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans overflow-x-hidden">
+      {/* ─── Navigation ─── */}
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <NavLink to="/" className="flex items-center gap-2.5">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+          <NavLink to="/" className="flex items-center gap-2.5 shrink-0" aria-label="Saarthi Home">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-blue-700 flex items-center justify-center text-white shadow-xs">
               <Compass className="w-5 h-5" />
             </div>
@@ -69,24 +121,30 @@ export default function LandingPage() {
             </span>
           </NavLink>
 
-          <nav className="hidden md:flex items-center gap-8 text-xs font-semibold text-slate-600">
-            <a href="#features" className="hover:text-indigo-600 transition-colors">Platform Features</a>
-            <a href="#how-it-works" className="hover:text-indigo-600 transition-colors">How It Works</a>
-            <a href="#case-study" className="hover:text-indigo-600 transition-colors">Prerequisite Gap Model</a>
+          <nav className="hidden md:flex items-center gap-6 text-xs font-semibold text-slate-600" aria-label="Landing page navigation">
+            <a href="#features" className="hover:text-indigo-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-md px-1">
+              Platform Features
+            </a>
+            <a href="#how-it-works" className="hover:text-indigo-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-md px-1">
+              How It Works
+            </a>
+            <a href="#case-study" className="hover:text-indigo-600 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-md px-1">
+              Prerequisite Gap Model
+            </a>
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <NavLink
               to="/login"
-              className="text-xs font-semibold text-slate-700 hover:text-indigo-600 px-3 py-2 transition-colors flex items-center gap-1.5"
+              className="text-xs font-semibold text-slate-700 hover:text-indigo-600 px-3 py-2 transition-colors flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-xl"
             >
-              <LogIn className="w-4 h-4" />
+              <LogIn className="w-4 h-4" aria-hidden="true" />
               Sign In
             </NavLink>
 
             <NavLink
               to="/register"
-              className="text-xs font-semibold px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-colors"
+              className="text-xs font-semibold px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white shadow-xs transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
             >
               Get Started
             </NavLink>
@@ -94,88 +152,90 @@ export default function LandingPage() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative pt-16 pb-20 lg:pt-24 lg:pb-28 overflow-hidden bg-gradient-to-b from-white to-slate-50 border-b border-slate-200/60">
+      {/* ─── Hero Section ─── */}
+      <section className="relative pt-14 pb-16 lg:pt-20 lg:pb-24 overflow-hidden bg-gradient-to-b from-white to-slate-50 border-b border-slate-200/60">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 border border-indigo-200/70 text-indigo-700 text-xs font-semibold mb-6">
-            <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-            <span>EduTrack + EduBridge: Combined Academic & Learning System</span>
+            <Sparkles className="w-3.5 h-3.5 text-indigo-600" aria-hidden="true" />
+            <span>Integrated College ERP &amp; Learning Intelligence Platform</span>
           </div>
 
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 max-w-4xl mx-auto leading-[1.15]">
-            Understand the Gap.{' '}
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-extrabold tracking-tight text-slate-900 max-w-4xl mx-auto leading-[1.15]">
+            Manage Your Campus.{' '}
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-blue-700">
-              Unlock Your Potential.
+              Understand Every Learner.
             </span>
           </h1>
 
-          <p className="mt-6 text-base sm:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
-            Saarthi unites daily academic tracking — attendance, marks, and assignments — with a breakthrough prerequisite gap diagnostic engine that detects foundational misunderstandings before exams.
+          <p className="mt-5 text-sm sm:text-base lg:text-lg text-slate-600 max-w-2xl mx-auto leading-relaxed">
+            One connected platform for college academics, attendance, campus services
+            and personalized learning support.
           </p>
 
-          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
+          <div className="mt-7 flex flex-col sm:flex-row items-center justify-center gap-3">
             <NavLink
               to="/login"
-              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
             >
-              <GraduationCap className="w-4 h-4" />
+              <GraduationCap className="w-4 h-4" aria-hidden="true" />
               <span>Enter Student Portal</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4" aria-hidden="true" />
             </NavLink>
 
             <NavLink
               to="/login"
-              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-semibold text-sm border border-slate-300 shadow-xs transition-all flex items-center justify-center gap-2"
+              className="w-full sm:w-auto px-6 py-3 rounded-xl bg-white hover:bg-slate-50 text-slate-800 font-semibold text-sm border border-slate-300 shadow-xs transition-all flex items-center justify-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
             >
-              <Users2 className="w-4 h-4 text-indigo-600" />
+              <Users2 className="w-4 h-4 text-indigo-600" aria-hidden="true" />
               <span>Enter Faculty Portal</span>
             </NavLink>
           </div>
 
           {/* Product Preview Card */}
-          <div className="mt-14 max-w-5xl mx-auto rounded-2xl p-2 bg-slate-200/70 border border-slate-200 shadow-xl">
-            <div className="bg-white rounded-xl p-5 text-left border border-slate-100">
+          <div className="mt-12 max-w-5xl mx-auto rounded-2xl p-2 bg-slate-200/70 border border-slate-200 shadow-xl">
+            <div className="bg-white rounded-xl p-4 sm:p-5 text-left border border-slate-100">
               {/* Window Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-4 border-b border-slate-100 mb-4">
                 <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-rose-400" />
-                  <span className="w-3 h-3 rounded-full bg-amber-400" />
-                  <span className="w-3 h-3 rounded-full bg-emerald-400" />
-                  <span className="ml-3 text-xs font-semibold text-slate-500">
-                    Saarthi Knowledge Intelligence — Student View
+                  <span className="w-3 h-3 rounded-full bg-rose-400" aria-hidden="true" />
+                  <span className="w-3 h-3 rounded-full bg-amber-400" aria-hidden="true" />
+                  <span className="w-3 h-3 rounded-full bg-emerald-400" aria-hidden="true" />
+                  <span className="ml-2 text-xs font-semibold text-slate-500">
+                    Saarthi — Student Dashboard Preview
                   </span>
                 </div>
-                <div className="text-[11px] font-medium text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-100">
-                  Active Demo Environment
+                <div className="text-[10px] sm:text-[11px] font-medium text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200 flex items-center gap-1">
+                  <Info className="w-3 h-3" aria-hidden="true" />
+                  Illustrative Example — Not Real Data
                 </div>
               </div>
 
               {/* Sample Dashboard Preview Content */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
-                  <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">Overall Attendance</div>
-                  <div className="text-2xl font-bold text-slate-900 mt-1">84.6%</div>
-                  <div className="text-[11px] text-emerald-600 font-medium mt-1 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> QR Verified Attendance Active
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+                <div className="p-3 sm:p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="text-[10px] sm:text-[11px] text-slate-500 font-semibold uppercase tracking-wider">Overall Attendance</div>
+                  <div className="text-xl sm:text-2xl font-bold text-slate-900 mt-1">84.6%</div>
+                  <div className="text-[10px] sm:text-[11px] text-emerald-600 font-medium mt-1 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3" aria-hidden="true" /> QR Verified
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200/80">
-                  <div className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider">Average Marks</div>
-                  <div className="text-2xl font-bold text-slate-900 mt-1">78.4%</div>
-                  <div className="text-[11px] text-indigo-600 font-medium mt-1">
+                <div className="p-3 sm:p-4 rounded-xl bg-slate-50 border border-slate-200/80">
+                  <div className="text-[10px] sm:text-[11px] text-slate-500 font-semibold uppercase tracking-wider">Average Marks</div>
+                  <div className="text-xl sm:text-2xl font-bold text-slate-900 mt-1">78.4%</div>
+                  <div className="text-[10px] sm:text-[11px] text-indigo-600 font-medium mt-1">
                     Sem 4 • 5 Core Subjects
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-amber-50/80 border border-amber-200">
-                  <div className="text-[11px] text-amber-800 font-semibold uppercase tracking-wider flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                    Signature Diagnosis
+                <div className="p-3 sm:p-4 rounded-xl bg-amber-50/80 border border-amber-200">
+                  <div className="text-[10px] sm:text-[11px] text-amber-800 font-semibold uppercase tracking-wider flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" aria-hidden="true" />
+                    Diagnosis Alert
                   </div>
-                  <div className="text-sm font-bold text-amber-950 mt-1">Prerequisite Gap Detected</div>
-                  <div className="text-[11px] text-amber-800 mt-0.5 leading-snug">
-                    Differential Equations issue traced back to Integration.
+                  <div className="text-xs sm:text-sm font-bold text-amber-950 mt-1">Prerequisite Gap Detected</div>
+                  <div className="text-[10px] sm:text-[11px] text-amber-800 mt-0.5 leading-snug">
+                    Differential Equations → Integration
                   </div>
                 </div>
               </div>
@@ -184,122 +244,103 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Feature Grid */}
-      <section id="features" className="py-20 bg-white">
+      {/* ─── Feature Grid ─── */}
+      <section id="features" className="py-16 lg:py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-14">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-indigo-600 mb-2">Comprehensive Architecture</h2>
-            <h3 className="text-3xl font-bold text-slate-900">
+          <div className="text-center max-w-3xl mx-auto mb-12">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-indigo-600 mb-2">Platform Modules</h2>
+            <h3 className="text-2xl sm:text-3xl font-bold text-slate-900">
               Everything students and educators need in one platform
             </h3>
             <p className="mt-3 text-sm text-slate-600">
-              Built to eliminate both administrative friction and invisible learning barriers.
+              From daily attendance and marks to prerequisite-gap diagnostics and campus services.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200/70 hover:border-indigo-300 transition-all hover:shadow-xs">
-              <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center mb-4">
-                <CalendarCheck className="w-5 h-5" />
-              </div>
-              <h4 className="font-bold text-base text-slate-900 mb-2">QR Attendance Tracking</h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Dynamic time-based QR code generation for teachers and instant camera or code verification for students.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200/70 hover:border-indigo-300 transition-all hover:shadow-xs">
-              <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center mb-4">
-                <GraduationCap className="w-5 h-5" />
-              </div>
-              <h4 className="font-bold text-base text-slate-900 mb-2">Academic Performance</h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Subject-wise internal assessments, semester exams, and class grade analytics with intuitive filters.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200/70 hover:border-indigo-300 transition-all hover:shadow-xs">
-              <div className="w-10 h-10 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center mb-4">
-                <GitFork className="w-5 h-5" />
-              </div>
-              <h4 className="font-bold text-base text-slate-900 mb-2">Prerequisite Gap Graph</h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Interactive concept dependency mapping powered by React Flow to pinpoint root-cause weaknesses.
-              </p>
-            </div>
-
-            <div className="p-6 rounded-2xl bg-slate-50 border border-slate-200/70 hover:border-indigo-300 transition-all hover:shadow-xs">
-              <div className="w-10 h-10 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center mb-4">
-                <TrendingUp className="w-5 h-5" />
-              </div>
-              <h4 className="font-bold text-base text-slate-900 mb-2">Practice & Reassessment</h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Targeted practice modules with real explanations, paired with reassessment to measure verified growth.
-              </p>
-            </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {features.map((f) => {
+              const Icon = f.icon;
+              return (
+                <article
+                  key={f.title}
+                  className="group p-5 rounded-2xl bg-slate-50 border border-slate-200/70 hover:border-indigo-300 transition-all hover:shadow-sm flex flex-col"
+                >
+                  <div className={`w-10 h-10 rounded-xl ${f.iconBg} flex items-center justify-center mb-3`}>
+                    <Icon className="w-5 h-5" aria-hidden="true" />
+                  </div>
+                  <h4 className="font-bold text-sm sm:text-base text-slate-900 mb-1.5">{f.title}</h4>
+                  <p className="text-xs text-slate-600 leading-relaxed flex-1">{f.desc}</p>
+                  {f.cta && (
+                    <NavLink
+                      to={f.cta.to}
+                      className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-md"
+                    >
+                      {f.cta.label}
+                      <ChevronRight className="w-3.5 h-3.5" aria-hidden="true" />
+                    </NavLink>
+                  )}
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* 3-Step Workflow */}
-      <section id="how-it-works" className="py-20 bg-slate-50 border-y border-slate-200/70">
+      {/* ─── 3-Step Workflow ─── */}
+      <section id="how-it-works" className="py-16 lg:py-20 bg-slate-50 border-y border-slate-200/70">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-2xl mx-auto mb-14">
+          <div className="text-center max-w-2xl mx-auto mb-12">
             <h2 className="text-xs font-bold uppercase tracking-wider text-indigo-600 mb-2">The Closed-Loop Cycle</h2>
-            <h3 className="text-3xl font-bold text-slate-900">Assess → Practice → Improve</h3>
+            <h3 className="text-2xl sm:text-3xl font-bold text-slate-900">Assess → Practice → Improve</h3>
             <p className="mt-3 text-sm text-slate-600">
               Continuous learning intelligence that turns academic struggles into demonstrable mastery.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 relative shadow-xs">
-              <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full inline-block mb-4">
-                Step 01
-              </span>
-              <h4 className="font-bold text-base text-slate-900 mb-2">Diagnostic Assessment</h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Take a targeted diagnostic quiz. Rather than just grading right/wrong, Saarthi examines which prerequisite concepts contributed to the error.
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 relative shadow-xs">
-              <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full inline-block mb-4">
-                Step 02
-              </span>
-              <h4 className="font-bold text-base text-slate-900 mb-2">Targeted Recovery</h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Receive customized practice sets tailored specifically to the diagnosed prerequisite gap with step-by-step solution breakdowns.
-              </p>
-            </div>
-
-            <div className="bg-white p-6 rounded-2xl border border-slate-200 relative shadow-xs">
-              <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full inline-block mb-4">
-                Step 03
-              </span>
-              <h4 className="font-bold text-base text-slate-900 mb-2">Verified Reassessment</h4>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Complete a reassessment. Watch your concept mastery increase on the graph, while teachers see real-time recovery analytics.
-              </p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+            {[
+              {
+                step: '01',
+                title: 'Diagnostic Assessment',
+                desc: 'Take a targeted diagnostic quiz. Rather than just grading right/wrong, Saarthi examines which prerequisite concepts contributed to the error.',
+              },
+              {
+                step: '02',
+                title: 'Targeted Recovery',
+                desc: 'Receive customized practice sets tailored specifically to the diagnosed prerequisite gap with step-by-step solution breakdowns.',
+              },
+              {
+                step: '03',
+                title: 'Verified Reassessment',
+                desc: 'Complete a reassessment. Watch your concept mastery increase on the graph, while teachers see real-time recovery analytics.',
+              },
+            ].map((s) => (
+              <article key={s.step} className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
+                <span className="text-xs font-bold text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full inline-block mb-4">
+                  Step {s.step}
+                </span>
+                <h4 className="font-bold text-base text-slate-900 mb-2">{s.title}</h4>
+                <p className="text-xs text-slate-600 leading-relaxed">{s.desc}</p>
+              </article>
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Case Study Section */}
-      <section id="case-study" className="py-20 bg-white">
+      {/* ─── Case Study Section ─── */}
+      <section id="case-study" className="py-16 lg:py-20 bg-white">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white rounded-3xl p-8 sm:p-12 shadow-xl">
+          <div className="bg-gradient-to-br from-indigo-900 to-slate-900 text-white rounded-3xl p-6 sm:p-10 lg:p-12 shadow-xl">
             <div className="flex items-center gap-2 text-indigo-300 text-xs font-semibold mb-3">
-              <BrainCircuit className="w-4 h-4" />
-              <span>Real-World Learning Journey</span>
+              <BrainCircuit className="w-4 h-4" aria-hidden="true" />
+              <span>Illustrative Learning Journey — Example Scenario</span>
             </div>
 
-            <h3 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight">
               Case in Point: Differential Equations Bottleneck
             </h3>
 
-            <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6 text-xs text-slate-300">
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 text-xs text-slate-300">
               <div className="bg-white/10 p-4 rounded-xl border border-white/10">
                 <div className="font-bold text-white mb-1">1. The Symptom</div>
                 <p>
@@ -317,7 +358,12 @@ export default function LandingPage() {
               <div className="bg-white/10 p-4 rounded-xl border border-white/10">
                 <div className="font-bold text-white mb-1">3. The Resolution</div>
                 <p>
-                  4 targeted integration practice exercises restore foundational fluency. Post-reassessment mastery climbs from 42% to 84%.
+                  4 targeted integration practice exercises restore foundational fluency.
+                  Post-reassessment mastery climbs from 42% to 84%.
+                </p>
+                <p className="mt-1.5 text-[10px] text-indigo-300 italic flex items-center gap-1">
+                  <Info className="w-3 h-3 shrink-0" aria-hidden="true" />
+                  Illustrative example — not based on actual student records
                 </p>
               </div>
             </div>
@@ -327,152 +373,30 @@ export default function LandingPage() {
                 Ready to experience the interactive concept graph and assessments?
               </span>
               <NavLink
-                to="/student/learning-gaps"
-                className="px-5 py-2.5 rounded-xl bg-white text-slate-900 hover:bg-slate-100 font-semibold text-xs transition-colors flex items-center gap-2"
+                to="/login"
+                className="px-5 py-2.5 rounded-xl bg-white text-slate-900 hover:bg-slate-100 font-semibold text-xs transition-colors flex items-center gap-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
               >
-                <span>Launch Learning Gap Map</span>
-                <ChevronRight className="w-4 h-4" />
+                <span>Try the Learning Gap Map</span>
+                <ChevronRight className="w-4 h-4" aria-hidden="true" />
               </NavLink>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="mt-auto border-t border-slate-200 bg-white py-10">
+      {/* ─── Footer ─── */}
+      <footer className="mt-auto border-t border-slate-200 bg-white py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <div className="flex items-center gap-2">
-            <Compass className="w-4 h-4 text-indigo-600" />
+            <Compass className="w-4 h-4 text-indigo-600" aria-hidden="true" />
             <span className="font-bold text-slate-800">Saarthi</span>
-            <span>• Smart Academic & Learning Platform</span>
+            <span>• Integrated College ERP &amp; Learning Platform</span>
           </div>
           <div>
-            Built with React, Vite, Tailwind CSS, Lucide, Recharts & React Flow.
+            Built with React, Vite, Tailwind CSS, Lucide, Recharts &amp; React Flow.
           </div>
         </div>
       </footer>
-
-      {/* Sign In / Register Modal */}
-      <Modal
-        isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
-        title={authMode === 'login' ? 'Sign In to Saarthi' : 'Register for Saarthi'}
-        maxWidth="max-w-md"
-      >
-        <div className="space-y-4">
-          {/* Role selector tabs */}
-          <div className="flex p-1 bg-slate-100 rounded-xl">
-            <button
-              type="button"
-              onClick={() => handleRoleSelect('student')}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                role === 'student' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500'
-              }`}
-            >
-              Student Portal
-            </button>
-            <button
-              type="button"
-              onClick={() => handleRoleSelect('teacher')}
-              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                role === 'teacher' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500'
-              }`}
-            >
-              Faculty Portal
-            </button>
-          </div>
-
-          <form onSubmit={handleAuthSubmit} className="space-y-3">
-            {authMode === 'register' && (
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full text-xs rounded-xl border border-slate-200 py-2.5 px-3 text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none"
-                  placeholder="Enter full name"
-                />
-              </div>
-            )}
-
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">
-                {role === 'student' ? 'Student ID / Roll No' : 'Faculty ID'}
-              </label>
-              <input
-                type="text"
-                required
-                value={idNumber}
-                onChange={(e) => setIdNumber(e.target.value)}
-                className="w-full text-xs rounded-xl border border-slate-200 py-2.5 px-3 text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none font-mono"
-                placeholder={role === 'student' ? 'S1001' : 'T2001'}
-              />
-            </div>
-
-            {authMode === 'register' && (
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Email Address</label>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full text-xs rounded-xl border border-slate-200 py-2.5 px-3 text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none"
-                  placeholder="name@college.edu"
-                />
-              </div>
-            )}
-
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">Password</label>
-              <input
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full text-xs rounded-xl border border-slate-200 py-2.5 px-3 text-slate-900 focus:ring-2 focus:ring-indigo-500 outline-none"
-                placeholder="••••••••"
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="w-full mt-2 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs transition-colors"
-            >
-              {authMode === 'login' ? `Enter as ${role === 'student' ? 'Student' : 'Faculty'}` : 'Complete Registration'}
-            </button>
-          </form>
-
-          {/* Quick Demo Pre-fill notes */}
-          <div className="pt-2 border-t border-slate-100 text-center text-[11px] text-slate-500">
-            <strong>Pre-configured Demo Credentials:</strong><br />
-            Student: <code className="bg-slate-100 px-1 py-0.5 rounded text-indigo-700 font-mono">S1001 / student123</code><br />
-            Teacher: <code className="bg-slate-100 px-1 py-0.5 rounded text-indigo-700 font-mono">T2001 / teacher123</code>
-          </div>
-
-          <div className="text-center text-xs">
-            {authMode === 'login' ? (
-              <button
-                type="button"
-                onClick={() => setAuthMode('register')}
-                className="text-indigo-600 hover:underline font-semibold"
-              >
-                Need an account? Register here
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setAuthMode('login')}
-                className="text-indigo-600 hover:underline font-semibold"
-              >
-                Already have credentials? Sign in
-              </button>
-            )}
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }
