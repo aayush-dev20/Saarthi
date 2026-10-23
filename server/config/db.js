@@ -1,5 +1,12 @@
 import mongoose from 'mongoose';
 import { MongoMemoryServer } from 'mongodb-memory-server';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const persistentDbPath = path.resolve(__dirname, '../../data/db');
 
 let mongoMemoryServer = null;
 
@@ -19,19 +26,25 @@ export async function connectDB() {
       if (process.env.NODE_ENV === 'production') {
         throw err;
       }
-      console.log('🔄 Falling back to isolated in-memory MongoDB for local evaluation...');
+      console.log('🔄 Falling back to persistent local MongoDB database...');
     }
   }
 
-  // Development In-Memory Fallback
+  // Persistent Local MongoDB Engine
   try {
-    console.log('🔄 Starting isolated In-Memory MongoDB Server for testing...');
-    mongoMemoryServer = await MongoMemoryServer.create();
+    console.log('🔄 Starting persistent local MongoDB database at:', persistentDbPath);
+    fs.mkdirSync(persistentDbPath, { recursive: true });
+
+    mongoMemoryServer = await MongoMemoryServer.create({
+      instance: {
+        dbPath: persistentDbPath,
+      },
+    });
     const memUri = mongoMemoryServer.getUri();
     await mongoose.connect(memUri);
-    console.log('✅ Connected to In-Memory MongoDB Server at:', memUri);
+    console.log('✅ Connected to persistent MongoDB at:', memUri);
   } catch (err) {
-    console.error('❌ Failed to start In-Memory MongoDB:', err);
+    console.error('❌ Failed to start persistent MongoDB:', err);
     throw err;
   }
 }

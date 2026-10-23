@@ -22,6 +22,9 @@ import PersonalizedPractice from './pages/student/PersonalizedPractice';
 import ProgressReports from './pages/student/ProgressReports';
 import StudentLeaderboard from './pages/student/StudentLeaderboard';
 import StudentCampusPass from './pages/student/StudentCampusPass';
+import StudentLibrary from './pages/student/StudentLibrary';
+import StudentLeave from './pages/student/StudentLeave';
+import StudentCanteen from './pages/student/StudentCanteen';
 
 // Teacher Pages
 import TeacherDashboard from './pages/teacher/TeacherDashboard';
@@ -68,6 +71,9 @@ export default function App() {
               <Route path="progress" element={<ProgressReports />} />
               <Route path="leaderboard" element={<StudentLeaderboard />} />
               <Route path="campus-pass" element={<StudentCampusPass />} />
+              <Route path="library" element={<StudentLibrary />} />
+              <Route path="leave" element={<StudentLeave />} />
+              <Route path="canteen" element={<StudentCanteen />} />
             </Route>
           </Route>
 

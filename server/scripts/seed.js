@@ -732,6 +732,7 @@ export async function seedDatabase() {
   await ConceptPrerequisite.insertMany(edges);
 
   // 8. Diagnostic Questions & Initial Attempt for Aayush
+  // FIXED: Correct answers distributed across B, C, D, A (not defaulting to A/opt_1)
   const diagnosticQuestions = [
     {
       conceptCode: 'c5',
@@ -739,25 +740,25 @@ export async function seedDatabase() {
       isPrerequisiteCheck: true,
       question: 'Evaluate the integral ∫ x * e^(2x) dx using integration by parts.',
       options: [
-        { id: 'opt_1', text: '(x/2) e^(2x) - (1/4) e^(2x) + C', correct: true },
-        { id: 'opt_2', text: '(x/2) e^(2x) - (1/2) e^(2x) + C', correct: false },
-        { id: 'opt_3', text: 'x e^(2x) - e^(2x) + C', correct: false },
-        { id: 'opt_4', text: '(1/4) x e^(2x) + C', correct: false },
+        { id: 'opt_1', text: 'x e^(2x) - 2 e^(2x) + C', correct: false },
+        { id: 'opt_2', text: '(x/2) e^(2x) - (1/4) e^(2x) + C', correct: true },
+        { id: 'opt_3', text: '(x/2) e^(2x) + (1/4) e^(2x) + C', correct: false },
+        { id: 'opt_4', text: '(1/4) x e^(2x) - (1/2) e^(2x) + C', correct: false },
       ],
-      explanation: 'Using ∫ u dv = u v - ∫ v du with u = x (du = dx) and dv = e^(2x) dx: Result = (x/2) e^(2x) - (1/4) e^(2x) + C.',
+      explanation: 'Using ∫ u dv = u v - ∫ v du with u = x (du = dx) and dv = e^(2x) dx: Result = (x/2) e^(2x) - (1/4) e^(2x) + C (Option B).',
     },
     {
       conceptCode: 'c5',
       conceptName: 'Integration by Parts & Substitution',
       isPrerequisiteCheck: true,
-      question: 'To solve ∫ (2x + 3) / (x^2 + 3x + 5) dx, which substitution is ideal?',
+      question: 'To solve ∫ (2x + 3) / (x^2 + 3x + 5) dx, what is the exact evaluated result?',
       options: [
-        { id: 'opt_1', text: 'u = x^2 + 3x + 5, du = (2x + 3) dx', correct: true },
-        { id: 'opt_2', text: 'u = 2x + 3', correct: false },
-        { id: 'opt_3', text: 'u = x^2', correct: false },
-        { id: 'opt_4', text: 'Integration by parts with u = 2x + 3', correct: false },
+        { id: 'opt_1', text: '1 / (x^2 + 3x + 5)^2 + C', correct: false },
+        { id: 'opt_2', text: 'arctan(x + 3/2) + C', correct: false },
+        { id: 'opt_3', text: 'ln|x^2 + 3x + 5| + C', correct: true },
+        { id: 'opt_4', text: '(2x + 3) * ln|x^2 + 3x + 5| + C', correct: false },
       ],
-      explanation: 'The numerator (2x + 3) is the exact derivative of denominator (x^2 + 3x + 5), yielding ln|x^2 + 3x + 5| + C directly.',
+      explanation: 'The numerator (2x + 3) is the exact derivative of the denominator (x^2 + 3x + 5), yielding ln|x^2 + 3x + 5| + C directly (Option C).',
     },
     {
       conceptCode: 'c6',
@@ -765,12 +766,12 @@ export async function seedDatabase() {
       isPrerequisiteCheck: false,
       question: 'Find the integrating factor I(x) for the linear ODE: dy/dx + (2/x)y = x^3.',
       options: [
-        { id: 'opt_1', text: 'x^2', correct: true },
-        { id: 'opt_2', text: '2 ln(x)', correct: false },
-        { id: 'opt_3', text: 'e^(2x)', correct: false },
-        { id: 'opt_4', text: 'x^3', correct: false },
+        { id: 'opt_1', text: '2 ln(x)', correct: false },
+        { id: 'opt_2', text: 'e^(2x)', correct: false },
+        { id: 'opt_3', text: '1/x^2', correct: false },
+        { id: 'opt_4', text: 'x^2', correct: true },
       ],
-      explanation: 'The integrating factor is I(x) = e^(∫ (2/x) dx) = e^(2 ln x) = x^2.',
+      explanation: 'The integrating factor is I(x) = e^(∫ (2/x) dx) = e^(2 ln x) = e^(ln(x^2)) = x^2 (Option D).',
     },
     {
       conceptCode: 'c6',
@@ -783,20 +784,33 @@ export async function seedDatabase() {
         { id: 'opt_3', text: 'y = C * e^(3x)', correct: false },
         { id: 'opt_4', text: 'ln(y) = 6x + C', correct: false },
       ],
-      explanation: 'Separating variables: dy/y = 3x^2 dx => ln(y) = x^3 + C1 => y = C e^(x^3).',
+      explanation: 'Separating variables: dy/y = 3x^2 dx => ln(y) = x^3 + C1 => y = C e^(x^3) (Option A).',
     },
     {
       conceptCode: 'c5',
       conceptName: 'Integration by Parts & Substitution',
       isPrerequisiteCheck: true,
-      question: 'Evaluate ∫ ln(x) dx.',
+      question: 'Evaluate the integral ∫ ln(x) dx.',
       options: [
-        { id: 'opt_1', text: 'x ln(x) - x + C', correct: true },
-        { id: 'opt_2', text: '(1/x) + C', correct: false },
-        { id: 'opt_3', text: '(ln(x))^2 / 2 + C', correct: false },
+        { id: 'opt_1', text: '(1/x) + C', correct: false },
+        { id: 'opt_2', text: '(ln(x))^2 / 2 + C', correct: false },
+        { id: 'opt_3', text: 'x ln(x) - x + C', correct: true },
         { id: 'opt_4', text: 'x ln(x) + x + C', correct: false },
       ],
-      explanation: 'Using parts with u = ln(x) and dv = dx: ∫ ln(x) dx = x ln(x) - x + C.',
+      explanation: 'Using parts with u = ln(x) and dv = dx: ∫ ln(x) dx = x ln(x) - x + C (Option C).',
+    },
+    {
+      conceptCode: 'c4',
+      conceptName: 'Differentiation Fundamentals',
+      isPrerequisiteCheck: true,
+      question: 'If y = x^2 * ln(x), what is the first derivative dy/dx?',
+      options: [
+        { id: 'opt_1', text: '2x / x = 2', correct: false },
+        { id: 'opt_2', text: '2x ln(x) + x', correct: true },
+        { id: 'opt_3', text: 'x^2 + 2x', correct: false },
+        { id: 'opt_4', text: '2x ln(x)', correct: false },
+      ],
+      explanation: 'Product rule: d/dx [u * v] = u\' v + u v\'. Here u = x^2 and v = ln(x). dy/dx = 2x ln(x) + x^2(1/x) = 2x ln(x) + x (Option B).',
     },
   ];
 

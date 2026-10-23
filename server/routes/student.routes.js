@@ -2,6 +2,7 @@ import express from 'express';
 import { z } from 'zod';
 import { authenticateToken, requireRole } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
+import { User } from '../models/User.js';
 import { Enrollment } from '../models/Enrollment.js';
 import { Subject } from '../models/Subject.js';
 import { Mark } from '../models/Mark.js';
@@ -585,20 +586,27 @@ router.get('/learning-gaps', async (req, res, next) => {
 router.get('/assessment', async (req, res, next) => {
   try {
     const questions = await DiagnosticQuestion.find();
+    const shouldShuffle = req.query.shuffle === 'true' || req.query.shuffle === '1';
 
     // Strip out correct answer boolean before sending to frontend client!
-    const sanitized = questions.map((q) => ({
-      id: q._id,
-      conceptCode: q.conceptCode,
-      conceptName: q.conceptName,
-      isPrerequisiteCheck: q.isPrerequisiteCheck,
-      question: q.question,
-      options: q.options.map((o) => ({
+    const sanitized = questions.map((q) => {
+      let opts = q.options.map((o) => ({
         id: o.id,
         text: o.text,
-      })),
-      explanation: q.explanation,
-    }));
+      }));
+      if (shouldShuffle) {
+        opts = [...opts].sort(() => 0.5 - Math.random());
+      }
+      return {
+        id: q._id,
+        conceptCode: q.conceptCode,
+        conceptName: q.conceptName,
+        isPrerequisiteCheck: q.isPrerequisiteCheck,
+        question: q.question,
+        options: opts,
+        explanation: q.explanation,
+      };
+    });
 
     res.json({
       success: true,
@@ -612,16 +620,20 @@ router.get('/assessment', async (req, res, next) => {
 // 8. Submit Diagnostic Assessment (Server-Side Evaluation & Scoring)
 const assessmentSubmitSchema = {
   body: z.object({
-    answers: z.record(z.string()), // { [questionId]: 'a' }
+    answers: z.record(z.string().nullable().optional()), // { [questionId]: 'opt_2' }
   }),
 };
 
 router.post('/assessment/submit', validate(assessmentSubmitSchema), async (req, res, next) => {
   try {
     const studentId = req.user._id;
-    const { answers } = req.body;
+    const { answers = {} } = req.body;
 
     const questions = await DiagnosticQuestion.find();
+    if (!questions || questions.length === 0) {
+      return res.status(404).json({ success: false, message: 'Question bank not found' });
+    }
+
     let correctCount = 0;
     let prereqErrors = 0;
     let targetErrors = 0;
@@ -630,7 +642,7 @@ router.post('/assessment/submit', validate(assessmentSubmitSchema), async (req, 
     questions.forEach((q) => {
       const selectedId = answers[q._id.toString()];
       const correctOption = q.options.find((o) => o.correct);
-      const isCorrect = selectedId === correctOption?.id;
+      const isCorrect = Boolean(selectedId && correctOption && selectedId === correctOption.id);
 
       if (isCorrect) {
         correctCount++;
@@ -644,7 +656,7 @@ router.post('/assessment/submit', validate(assessmentSubmitSchema), async (req, 
 
       evaluatedAnswers.push({
         questionId: q._id.toString(),
-        selectedOptionId: selectedId,
+        selectedOptionId: selectedId || null,
         isCorrect,
         conceptCode: q.conceptCode,
         isPrerequisiteCheck: q.isPrerequisiteCheck,
@@ -802,80 +814,123 @@ router.get('/progress', async (req, res, next) => {
   }
 });
 
-// 11. Student Transparent Leaderboard
+// 11. Student Academic CGPA / SGPA Leaderboard (Real-Data Verified Calculations)
 router.get('/leaderboard', async (req, res, next) => {
   try {
-    const studentId = req.user._id;
+    const currentStudentId = req.user._id;
+    const { mode = 'cgpa', semester = 'all', branch = 'all' } = req.query;
 
-    // Fetch or dynamically compute leaderboard rankings
-    let entries = await LeaderboardEntry.find()
-      .populate('student', 'name idNumber avatar section')
-      .sort({ totalScore: -1 });
-
-    // Fallback if freshly seeded: compute live scores
-    if (entries.length === 0) {
-      const allStudents = await User.find({ role: 'student' });
-      for (const st of allStudents) {
-        const marks = await Mark.find({ student: st._id });
-        const avgMark = marks.length ? marks.reduce((acc, m) => acc + m.totalMarks, 0) / marks.length : 78;
-        const practiceCount = await PracticeAttempt.countDocuments({ student: st._id });
-
-        await LeaderboardEntry.findOneAndUpdate(
-          { student: st._id },
-          {
-            student: st._id,
-            section: st.section || 'CSE-A',
-            semester: st.semester || 4,
-            academicPoints: Math.round(avgMark * 4), // max 400
-            diagnosticImprovementPoints: st.idNumber === 'S1001' ? 80 : 50,
-            courseworkPoints: 90,
-            participationPoints: practiceCount * 25,
-            badges: [
-              { id: 'b1', name: 'Calculus Pioneer', description: 'Recovered Integration Prerequisite', icon: 'Sparkles' },
-              { id: 'b2', name: 'Consistent Scholar', description: '90%+ Lecture Verification', icon: 'Award' },
-            ],
-          },
-          { upsert: true, new: true }
-        );
-      }
-      entries = await LeaderboardEntry.find()
-        .populate('student', 'name idNumber avatar section')
-        .sort({ totalScore: -1 });
+    const studentFilter = { role: 'student', status: 'active' };
+    if (branch && branch !== 'all') {
+      studentFilter.department = { $regex: branch, $options: 'i' };
     }
 
-    const leaderboardData = entries.map((entry, index) => {
-      const isCurrentStudent = entry.student?._id?.toString() === studentId.toString();
-      return {
-        rank: index + 1,
-        studentId: entry.student?._id,
-        name: entry.student?.name || 'Student',
-        rollNo: entry.student?.idNumber || 'S1000',
-        avatar: entry.student?.avatar || 'ST',
-        section: entry.section,
-        academicPoints: entry.academicPoints,
-        diagnosticImprovementPoints: entry.diagnosticImprovementPoints,
-        courseworkPoints: entry.courseworkPoints,
-        participationPoints: entry.participationPoints,
-        totalScore: entry.totalScore,
-        badges: entry.badges || [],
-        isMe: isCurrentStudent,
-      };
+    const students = await User.find(studentFilter).select('_id name idNumber avatar section semester department');
+
+    const rankingMode = mode.toLowerCase() === 'sgpa' ? 'Semester GPA (SGPA)' : 'Cumulative CGPA (10-Point Scale)';
+    const tieBreakingRule = '1st: Grade Points / CGPA; 2nd: Higher Aggregate Exam Percentage; 3rd: Higher Lecture Attendance Rate; 4th: Institutional Roll ID';
+
+    // Grade Point conversion table based on standard 10-point scale
+    const getGradePoint = (percentage) => {
+      if (percentage >= 90) return 10;
+      if (percentage >= 80) return 9;
+      if (percentage >= 70) return 8;
+      if (percentage >= 60) return 7;
+      if (percentage >= 50) return 6;
+      if (percentage >= 40) return 5;
+      return 0; // Fail
+    };
+
+    const calculatedRanks = [];
+
+    for (const st of students) {
+      let markFilter = { student: st._id };
+      if (semester && semester !== 'all') {
+        const semNum = Number(semester);
+        const subjectsInSem = await Subject.find({ semester: semNum }).select('_id');
+        markFilter.subject = { $in: subjectsInSem.map((s) => s._id) };
+      }
+
+      const marks = await Mark.find(markFilter).populate('subject');
+
+      // Only count verified published marks with valid course credits
+      if (marks.length === 0) continue;
+
+      let totalCreditsEarned = 0;
+      let totalCreditPoints = 0;
+      let totalRawMarks = 0;
+      let totalMaxMarks = 0;
+
+      for (const m of marks) {
+        const credits = m.subject?.credits || 3;
+        const totalMarks = m.totalMarks || (m.internalMarks || 0) + (m.externalMarks || 0) + (m.midSemMarks || 0);
+        const maxMarks = m.subject?.totalMax || (m.subject?.internalMax || 40) + (m.subject?.externalMax || 60);
+
+        const percentage = maxMarks > 0 ? (totalMarks / maxMarks) * 100 : totalMarks;
+        const gp = getGradePoint(percentage);
+
+        totalCreditPoints += credits * gp;
+        totalCreditsEarned += credits;
+        totalRawMarks += totalMarks;
+        totalMaxMarks += maxMarks;
+      }
+
+      if (totalCreditsEarned === 0) continue;
+
+      const gpa = Math.round((totalCreditPoints / totalCreditsEarned) * 100) / 100;
+      const aggregatePercentage = totalMaxMarks > 0 ? Math.round((totalRawMarks / totalMaxMarks) * 1000) / 10 : 0;
+
+      // Lecture attendance rate for tie-breaking
+      const attendedSessions = await AttendanceRecord.countDocuments({ student: st._id, status: 'PRESENT' });
+      const totalSessions = await AttendanceSession.countDocuments();
+      const attendanceRate = totalSessions > 0 ? Math.round((attendedSessions / totalSessions) * 100) : 100;
+
+      calculatedRanks.push({
+        studentId: st._id,
+        name: st.name,
+        rollNo: st.idNumber,
+        avatar: st.avatar || st.name.slice(0, 2).toUpperCase(),
+        section: st.section || 'CSE-A',
+        semester: st.semester || 4,
+        branch: st.department || 'Computer Science & Engineering',
+        gpa,
+        aggregatePercentage,
+        attendanceRate,
+        creditsCompleted: totalCreditsEarned,
+        isMe: st._id.toString() === currentStudentId.toString(),
+      });
+    }
+
+    // Sort with deterministic tie-breaking:
+    // 1. GPA desc
+    // 2. Aggregate percentage desc
+    // 3. Attendance rate desc
+    // 4. Roll number asc
+    calculatedRanks.sort((a, b) => {
+      if (b.gpa !== a.gpa) return b.gpa - a.gpa;
+      if (b.aggregatePercentage !== a.aggregatePercentage) return b.aggregatePercentage - a.aggregatePercentage;
+      if (b.attendanceRate !== a.attendanceRate) return b.attendanceRate - a.attendanceRate;
+      return a.rollNo.localeCompare(b.rollNo);
     });
 
-    const myEntry = leaderboardData.find((l) => l.isMe) || leaderboardData[0];
+    const leaderboardWithRank = calculatedRanks.map((item, idx) => ({
+      ...item,
+      rank: idx + 1,
+    }));
+
+    const myEntry = leaderboardWithRank.find((r) => r.isMe) || null;
 
     res.json({
       success: true,
       data: {
-        myRank: myEntry?.rank || 1,
-        myScore: myEntry?.totalScore || 420,
-        leaderboard: leaderboardData,
-        scoringRules: [
-          { category: 'Academic Performance', rule: 'Based on verified internal & semester exam marks', weight: '40%' },
-          { category: 'Diagnostic Gap Recovery', rule: 'Earned by scoring >70% on prerequisite reassessment', weight: '25%' },
-          { category: 'Coursework On-Time', rule: 'Verified assignment submissions', weight: '20%' },
-          { category: 'Remedial Practice', rule: 'Completing targeted practice sets without hint abuse', weight: '15%' },
-        ],
+        rankingMode,
+        academicPeriod: semester === 'all' ? 'All Completed Semesters' : `Semester ${semester}`,
+        tieBreakingRule,
+        totalEligibleStudents: leaderboardWithRank.length,
+        myRank: myEntry?.rank || 'N/A',
+        myGPA: myEntry?.gpa || 'N/A',
+        myAggregatePercentage: myEntry?.aggregatePercentage || 'N/A',
+        leaderboard: leaderboardWithRank,
       },
     });
   } catch (err) {

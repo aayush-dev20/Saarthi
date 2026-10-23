@@ -14,6 +14,9 @@ import {
   X,
   Trophy,
   Bus,
+  BookOpen,
+  FileText,
+  UtensilsCrossed,
 } from 'lucide-react';
 
 const studentNavItems = [
@@ -26,6 +29,9 @@ const studentNavItems = [
   { to: '/student/practice', icon: BookOpenCheck, label: 'Practice Sets' },
   { to: '/student/progress', icon: TrendingUp, label: 'Progress Reports' },
   { to: '/student/leaderboard', icon: Trophy, label: 'Leaderboard', badge: 'Rank' },
+  { to: '/student/library', icon: BookOpen, label: 'Digital Library', badge: 'Pass' },
+  { to: '/student/leave', icon: FileText, label: 'Leave Applications' },
+  { to: '/student/canteen', icon: UtensilsCrossed, label: 'Campus Canteen', badge: 'Live' },
   { to: '/student/campus-pass', icon: Bus, label: 'Transport & Hostel' },
 ];
 

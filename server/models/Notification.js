@@ -23,7 +23,7 @@ const notificationSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['ACADEMIC', 'ATTENDANCE', 'GAP_REMEDIAL', 'TRANSPORT', 'HOSTEL', 'SYSTEM'],
+      enum: ['ACADEMIC', 'ATTENDANCE', 'GAP_REMEDIAL', 'TRANSPORT', 'HOSTEL', 'SYSTEM', 'CAMPUS', 'LIBRARY'],
       default: 'ACADEMIC',
       index: true,
     },

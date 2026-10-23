@@ -122,12 +122,45 @@ export const api = {
   getAdminDashboard: () => request('/admin/dashboard'),
   getAdminAnalytics: () => request('/admin/dashboard'),
   getAdminUsers: (params = '') => request(`/admin/users${params ? `?${params}` : ''}`),
+  getAdminStudents: (params = '') => request(`/admin/students${params ? `?${params}` : ''}`),
+  getAdminTeachers: (params = '') => request(`/admin/teachers${params ? `?${params}` : ''}`),
+  getAdminUserDetail: (id) => request(`/admin/users/${id}/detail`),
+  updateAdminUserProfile: (id, payload) => request(`/admin/users/${id}/profile`, { method: 'PUT', body: payload }),
   updateUserRole: (id, role) => request(`/admin/users/${id}/role`, { method: 'PUT', body: { role } }),
   getAdminPendingUsers: () => request('/admin/pending-users'),
   approveAdminUser: (id, notes) => request(`/admin/users/${id}/approve`, { method: 'PUT', body: { notes } }),
   rejectAdminUser: (id, reason) => request(`/admin/users/${id}/reject`, { method: 'PUT', body: { reason } }),
   getAdminTimetables: () => request('/admin/timetables'),
-  getAdminAuditLogs: () => request('/admin/audit-logs'),
+  getAdminAuditLogs: (params = '') => request(`/admin/audit-logs${params ? `?${params}` : ''}`),
+
+  // Digital Library Endpoints
+  requestLibraryPass: (payload = {}) => request('/library/pass/request', { method: 'POST', body: payload }),
+  getMyLibraryPass: () => request('/library/pass/my'),
+  verifyLibraryPass: (tokenOrNumber, location, note) => request('/library/pass/verify', { method: 'POST', body: { tokenOrNumber, location, note } }),
+  revokeLibraryPass: (id) => request(`/library/pass/${id}/revoke`, { method: 'POST' }),
+  getLibraryBooks: (params = '') => request(`/library/books${params ? `?${params}` : ''}`),
+  issueLibraryBook: (payload) => request('/library/books/issue', { method: 'POST', body: payload }),
+  returnLibraryBook: (payload) => request('/library/books/return', { method: 'POST', body: payload }),
+  getMyLibraryLoans: () => request('/library/my-books'),
+  getAllLibraryLoans: (params = '') => request(`/library/loans${params ? `?${params}` : ''}`),
+  checkLibraryReminders: () => request('/library/reminders/check', { method: 'POST' }),
+
+  // Leave Application Endpoints
+  applyLeave: (payload) => request('/leave/apply', { method: 'POST', body: payload }),
+  getMyLeaves: () => request('/leave/my'),
+  getPendingLeaves: () => request('/leave/pending'),
+  getAllLeaves: (params = '') => request(`/leave/all${params ? `?${params}` : ''}`),
+  reviewLeave: (id, status, remarks) => request(`/leave/${id}/review`, { method: 'PUT', body: { status, remarks } }),
+  cancelLeave: (id) => request(`/leave/${id}/cancel`, { method: 'DELETE' }),
+
+  // Campus Canteen Ordering Endpoints
+  getCanteenItems: (params = '') => request(`/canteen/items${params ? `?${params}` : ''}`),
+  placeCanteenOrder: (payload) => request('/canteen/order', { method: 'POST', body: payload }),
+  getMyCanteenOrders: () => request('/canteen/orders/my'),
+  cancelCanteenOrder: (id) => request(`/canteen/orders/${id}/cancel`, { method: 'DELETE' }),
+  getAllCanteenOrders: (params = '') => request(`/canteen/orders${params ? `?${params}` : ''}`),
+  updateCanteenOrderStatus: (id, payload) => request(`/canteen/orders/${id}/status`, { method: 'PUT', body: payload }),
+  addCanteenItem: (payload) => request('/canteen/items', { method: 'POST', body: payload }),
 
   // Transport Endpoints
   getTransportDashboard: () => request('/transport/dashboard'),

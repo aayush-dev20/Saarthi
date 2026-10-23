@@ -19,6 +19,9 @@ import adminRoutes from './routes/admin.routes.js';
 import transportRoutes from './routes/transport.routes.js';
 import hostelRoutes from './routes/hostel.routes.js';
 import attendanceRoutes from './routes/attendance.routes.js';
+import libraryRoutes from './routes/library.routes.js';
+import leaveRoutes from './routes/leave.routes.js';
+import canteenRoutes from './routes/canteen.routes.js';
 
 import path from 'path';
 import fs from 'fs';
@@ -63,6 +66,9 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/transport', transportRoutes);
 app.use('/api/hostel', hostelRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/library', libraryRoutes);
+app.use('/api/leave', leaveRoutes);
+app.use('/api/canteen', canteenRoutes);
 
 // Fallback 404 for undefined API routes
 app.use('/api', (req, res) => {
