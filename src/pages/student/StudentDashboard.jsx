@@ -27,7 +27,6 @@ import Badge from '../../components/Badge';
 import QRScannerModal from '../../components/QRScannerModal';
 import { api } from '../../services/api';
 import { subscribeToStudentLiveUpdates } from '../../services/socket';
-import { performanceTrends } from '../../data/mockData';
 
 export default function StudentDashboard() {
   const [data, setData] = useState(null);
@@ -79,6 +78,8 @@ export default function StudentDashboard() {
 
   const subjects = data?.subjects || [];
   const hasGapAlert = data?.hasGapAlert ?? true;
+  const performanceTrends = data?.trends || [];
+  const pendingAssignmentsList = data?.pendingAssignments || [];
 
   return (
     <div className="space-y-6">
@@ -352,24 +353,32 @@ export default function StudentDashboard() {
           </div>
 
           <div className="space-y-3">
-            <div className="p-3.5 rounded-xl border border-slate-200/80 hover:border-indigo-300 transition-colors bg-slate-50/50">
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-semibold text-indigo-600">MATH-202</span>
-                <Badge variant="danger">High</Badge>
+            {pendingAssignmentsList.length > 0 ? (
+              pendingAssignmentsList.map((task) => (
+                <div key={task.id} className="p-3.5 rounded-xl border border-slate-200/80 hover:border-indigo-300 transition-colors bg-slate-50/50">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-semibold text-indigo-600">{task.subject}</span>
+                    <Badge variant={task.priority === 'High' ? 'danger' : 'warning'}>{task.priority || 'Normal'}</Badge>
+                  </div>
+                  <h4 className="text-xs font-bold text-slate-900 mt-1 line-clamp-1">
+                    {task.title}
+                  </h4>
+                  <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500">
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3 h-3 text-slate-400" />
+                      Due {task.dueDate || 'Soon'}
+                    </span>
+                    <NavLink to="/student/assignments" className="font-semibold text-indigo-600 hover:underline">
+                      Submit →
+                    </NavLink>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-4 rounded-xl border border-slate-200/70 bg-slate-50 text-center text-xs text-slate-500">
+                All assignments submitted! Great job.
               </div>
-              <h4 className="text-xs font-bold text-slate-900 mt-1 line-clamp-1">
-                Eigenvalue Applications & State Space
-              </h4>
-              <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500">
-                <span className="flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-slate-400" />
-                  Due in 2 days
-                </span>
-                <NavLink to="/student/assignments" className="font-semibold text-indigo-600 hover:underline">
-                  Submit →
-                </NavLink>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

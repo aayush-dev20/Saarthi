@@ -23,7 +23,6 @@ import StatCard from '../../components/StatCard';
 import Badge from '../../components/Badge';
 import QRGeneratorModal from '../../components/QRGeneratorModal';
 import { api } from '../../services/api';
-import { teacherFlaggedGapsSummary } from '../../data/mockData';
 
 export default function TeacherDashboard() {
   const [dashboardData, setDashboardData] = useState(null);

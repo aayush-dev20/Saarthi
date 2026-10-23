@@ -9,26 +9,35 @@ import {
   AlertTriangle,
   TrendingUp,
   Play,
+  Loader2,
 } from 'lucide-react';
 import ConceptGraph from '../../components/ConceptGraph';
 import Badge from '../../components/Badge';
 import LearningResourceModal from '../../components/LearningResourceModal';
 import { api } from '../../services/api';
-import { getConcepts } from '../../utils/storage';
-import { conceptGraphEdges } from '../../data/mockData';
+
+const defaultKnowledgeEdges = [
+  { id: 'e1-2', source: 'c1', target: 'c2' },
+  { id: 'e2-3', source: 'c2', target: 'c3' },
+  { id: 'e3-5', source: 'c3', target: 'c5' },
+  { id: 'e5-6', source: 'c5', target: 'c6', animated: true },
+  { id: 'e4-6', source: 'c4', target: 'c6' },
+  { id: 'e6-7', source: 'c6', target: 'c7' },
+];
 
 export default function LearningGaps() {
-  const [nodes, setNodes] = useState(() => getConcepts());
-  const [edges, setEdges] = useState(conceptGraphEdges);
+  const [nodes, setNodes] = useState([]);
+  const [edges, setEdges] = useState(defaultKnowledgeEdges);
   const [selectedConcept, setSelectedConcept] = useState(null);
   const [videoModalOpen, setVideoModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const fetchGaps = async () => {
     try {
       const res = await api.getLearningGaps();
       if (res.data?.nodes) {
         setNodes(res.data.nodes);
-        if (res.data.edges) setEdges(res.data.edges);
+        if (res.data.edges && res.data.edges.length > 0) setEdges(res.data.edges);
 
         const gapNode = res.data.nodes.find((n) => n.id === 'c5' || n.data?.isFlaggedGap);
         if (gapNode) {
@@ -39,10 +48,8 @@ export default function LearningGaps() {
       }
     } catch (err) {
       console.warn('Failed to fetch live learning gaps:', err.message);
-      const fallbackNodes = getConcepts();
-      setNodes(fallbackNodes);
-      const gapNode = fallbackNodes.find((n) => n.id === 'c5');
-      if (gapNode) setSelectedConcept(gapNode.data);
+    } finally {
+      setLoading(false);
     }
   };
 
