@@ -35,14 +35,22 @@ export async function connectDB() {
     console.log('🔄 Starting persistent local MongoDB database at:', persistentDbPath);
     fs.mkdirSync(persistentDbPath, { recursive: true });
 
-    mongoMemoryServer = await MongoMemoryServer.create({
-      instance: {
-        dbPath: persistentDbPath,
-      },
-    });
+    try {
+      mongoMemoryServer = await MongoMemoryServer.create({
+        instance: {
+          dbPath: persistentDbPath,
+        },
+        spawn: {
+          timeout: 30000,
+        },
+      });
+    } catch (persistErr) {
+      console.warn('⚠️ Persistent dbPath startup failed, creating ephemeral in-memory fallback:', persistErr.message);
+      mongoMemoryServer = await MongoMemoryServer.create();
+    }
     const memUri = mongoMemoryServer.getUri();
     await mongoose.connect(memUri);
-    console.log('✅ Connected to persistent MongoDB at:', memUri);
+    console.log('✅ Connected to MongoDB at:', memUri);
   } catch (err) {
     console.error('❌ Failed to start persistent MongoDB:', err);
     throw err;
